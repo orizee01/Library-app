@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { connection } from "next/server";
 import { getBooks, type Book } from "@/db/books";
+import { AddBookForm } from "./book-forms";
 
 function formatDate(isoDate: string) {
   return new Date(`${isoDate}T00:00:00Z`).toLocaleDateString("en-GB", {
@@ -50,6 +51,9 @@ export default function BooksPage() {
   return (
     <>
       <h2 className="mb-4 text-xl font-semibold text-stone-900">Books</h2>
+      <div className="mb-6">
+        <AddBookForm />
+      </div>
       <Suspense fallback={<p className="text-stone-600">Loading books…</p>}>
         <BookList />
       </Suspense>
