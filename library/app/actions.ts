@@ -124,6 +124,59 @@ export async function deleteBook(formData: FormData): Promise<{ error?: string }
   return {};
 }
 
+export async function lendBook(formData: FormData): Promise<{ error?: string }> {
+  const bookId = readId(formData, "id");
+  const memberId = readId(formData, "member_id");
+  if (!bookId) return { error: BOOK_GONE };
+  if (!memberId) return { error: "Please choose a member." };
+
+  try {
+    // The unique index allows one open loan per book. If there already is one,
+    // nothing is inserted and nothing comes back.
+    const loans = await sql`
+      insert into loans (book_id, member_id, borrowed_on, due_on)
+      values (${bookId}, ${memberId}, current_date, current_date + 14)
+      on conflict (book_id) where returned_on is null do nothing
+      returning id
+    `;
+    if (loans.length === 0) {
+      revalidatePath("/"); // this screen was out of date, so show the current loan
+      return { error: "This book is already on loan." };
+    }
+  } catch (error) {
+    // 23503: the book or member id doesn't point at a real row.
+    if ((error as { code?: string }).code === "23503") {
+      return { error: "That book or member no longer exists. Please refresh the page." };
+    }
+    console.error(error);
+    return { error: TRY_AGAIN };
+  }
+
+  revalidatePath("/");
+  return {};
+}
+
+export async function returnBook(formData: FormData): Promise<{ error?: string }> {
+  const id = readId(formData, "id");
+  if (!id) return { error: BOOK_GONE };
+
+  try {
+    const returned = await sql`
+      update loans
+      set returned_on = current_date
+      where book_id = ${id} and returned_on is null
+      returning id
+    `;
+    if (returned.length === 0) return { error: "This book isn't on loan." };
+  } catch (error) {
+    console.error(error);
+    return { error: TRY_AGAIN };
+  }
+
+  revalidatePath("/");
+  return {};
+}
+
 export async function addMember(
   _previous: MemberFormState,
   formData: FormData,

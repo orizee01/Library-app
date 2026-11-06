@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { connection } from "next/server";
 import { getBooks, type Book } from "@/db/books";
+import { getMembers, type Member } from "@/db/members";
 import { AddBookForm, BookActions } from "./book-forms";
 
 function formatDate(isoDate: string) {
@@ -12,7 +13,7 @@ function formatDate(isoDate: string) {
   });
 }
 
-function BookCard({ book }: { book: Book }) {
+function BookCard({ book, members }: { book: Book; members: Member[] }) {
   return (
     <li className="rounded-lg border border-stone-200 bg-white p-4 shadow-sm">
       <h3 className="font-semibold text-stone-900">{book.title}</h3>
@@ -27,7 +28,7 @@ function BookCard({ book }: { book: Book }) {
       ) : (
         <p className="mt-2 text-sm font-medium text-emerald-700">Available</p>
       )}
-      <BookActions book={book} />
+      <BookActions book={book} members={members} />
     </li>
   );
 }
@@ -35,6 +36,7 @@ function BookCard({ book }: { book: Book }) {
 async function BookList() {
   await connection(); // read the database on each request, not at build time
   const books = await getBooks();
+  const members = await getMembers();
 
   if (books.length === 0) {
     return <p className="text-stone-600">No books yet.</p>;
@@ -42,7 +44,7 @@ async function BookList() {
   return (
     <ul className="grid gap-3">
       {books.map((book) => (
-        <BookCard key={book.id} book={book} />
+        <BookCard key={book.id} book={book} members={members} />
       ))}
     </ul>
   );

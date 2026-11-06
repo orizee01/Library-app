@@ -2,7 +2,15 @@
 
 import { useActionState, useState, useTransition } from "react";
 import type { Book } from "@/db/books";
-import { addBook, deleteBook, updateBook, type BookValues } from "./actions";
+import type { Member } from "@/db/members";
+import {
+  addBook,
+  deleteBook,
+  lendBook,
+  returnBook,
+  updateBook,
+  type BookValues,
+} from "./actions";
 
 const inputClass =
   "w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-base text-stone-900";
@@ -80,7 +88,7 @@ function EditBookForm({ book, onClose }: { book: Book; onClose: () => void }) {
 
 // The buttons on one book. They share one message, so a new attempt clears the
 // last message.
-export function BookActions({ book }: { book: Book }) {
+export function BookActions({ book, members }: { book: Book; members: Member[] }) {
   const [editing, setEditing] = useState(false);
   const [message, setMessage] = useState<string>();
   const [pending, startTransition] = useTransition();
@@ -95,6 +103,36 @@ export function BookActions({ book }: { book: Book }) {
 
   return (
     <div className="mt-3">
+      {book.due_on ? (
+        <form action={run(returnBook)} className="mb-2">
+          <input type="hidden" name="id" value={book.id} />
+          <button type="submit" disabled={pending} className={primaryButton}>
+            Record return
+          </button>
+        </form>
+      ) : (
+        <form action={run(lendBook)} className="mb-2 flex flex-wrap items-center gap-2">
+          <input type="hidden" name="id" value={book.id} />
+          <select
+            name="member_id"
+            aria-label={`Lend "${book.title}" to`}
+            defaultValue=""
+            className="min-w-0 flex-1 rounded-md border border-stone-300 bg-white px-3 py-2 text-base text-stone-900 sm:max-w-xs"
+          >
+            <option value="" disabled>
+              Choose a member…
+            </option>
+            {members.map((member) => (
+              <option key={member.id} value={member.id}>
+                {member.name}
+              </option>
+            ))}
+          </select>
+          <button type="submit" disabled={pending} className={primaryButton}>
+            Lend for 14 days
+          </button>
+        </form>
+      )}
       <div className="flex flex-wrap gap-2">
         <button
           type="button"
