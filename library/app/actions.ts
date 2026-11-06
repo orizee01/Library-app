@@ -5,6 +5,7 @@ import { sql } from "@/db";
 
 export type BookValues = { title: string; author: string; year: string };
 export type BookFormState = { error?: string; values?: BookValues };
+export type MemberFormState = { error?: string; values?: { name: string; phone: string } };
 
 const TRY_AGAIN = "Something went wrong. Please try again.";
 const BOOK_GONE = "That book no longer exists. Please refresh the page.";
@@ -120,6 +121,35 @@ export async function deleteBook(formData: FormData): Promise<{ error?: string }
   }
 
   revalidatePath("/");
+  return {};
+}
+
+export async function addMember(
+  _previous: MemberFormState,
+  formData: FormData,
+): Promise<MemberFormState> {
+  const values = { name: text(formData, "name"), phone: text(formData, "phone") };
+
+  if (!values.name) return { error: "Please enter the member's name.", values };
+  if (values.name.length > 200) {
+    return { error: "That name is too long (200 characters at most).", values };
+  }
+  if (values.phone && !/^\+?[\d\s()-]{5,20}$/.test(values.phone)) {
+    return { error: "Please enter a real phone number, or leave it empty.", values };
+  }
+
+  try {
+    await sql`
+      insert into members (name, phone)
+      values (${values.name}, ${values.phone || null})
+    `;
+  } catch (error) {
+    console.error(error);
+    return { error: TRY_AGAIN, values };
+  }
+
+  revalidatePath("/members");
+  revalidatePath("/"); // the lend list on the Books page shows members too
   return {};
 }
 
