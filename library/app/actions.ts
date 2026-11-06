@@ -7,6 +7,7 @@ export type BookValues = { title: string; author: string; year: string };
 export type BookFormState = { error?: string; values?: BookValues };
 
 const TRY_AGAIN = "Something went wrong. Please try again.";
+const BOOK_GONE = "That book no longer exists. Please refresh the page.";
 
 // Form values come from the browser, so they can't be trusted. This returns
 // trimmed text with repeated spaces collapsed, and "" for anything else.
@@ -49,6 +50,77 @@ async function authorId(name: string) {
     returning id
   `;
   return author.id;
+}
+
+// Ids come from the browser too. Returns a whole number that fits the integer
+// column, or null for anything else, so it never reaches a query.
+function readId(formData: FormData, field: string) {
+  const value = text(formData, field);
+  const id = Number(value);
+  return /^\d+$/.test(value) && id > 0 && id <= 2147483647 ? id : null;
+}
+
+export async function updateBook(
+  _previous: BookFormState,
+  formData: FormData,
+): Promise<BookFormState> {
+  const values = readBook(formData);
+  const problem = bookProblem(values);
+  if (problem) return { error: problem, values };
+
+  const id = readId(formData, "id");
+  if (!id) return { error: BOOK_GONE, values };
+
+  try {
+    const author_id = await authorId(values.author);
+    const updated = await sql`
+      update books
+      set title = ${values.title},
+          year = ${values.year ? Number(values.year) : null},
+          author_id = ${author_id}
+      where id = ${id}
+      returning id
+    `;
+    if (updated.length === 0) return { error: BOOK_GONE, values };
+  } catch (error) {
+    console.error(error);
+    return { error: TRY_AGAIN, values };
+  }
+
+  revalidatePath("/");
+  return {};
+}
+
+export async function deleteBook(formData: FormData): Promise<{ error?: string }> {
+  const id = readId(formData, "id");
+  if (!id) return { error: BOOK_GONE };
+
+  try {
+    // The check and the delete are one statement, so a book can't be lent
+    // between checking it and deleting it. Its old loans go with it.
+    const deleted = await sql`
+      delete from books
+      where id = ${id}
+        and not exists (
+          select 1 from loans where book_id = ${id} and returned_on is null
+        )
+      returning id
+    `;
+    if (deleted.length === 0) {
+      const [book] = await sql`select id from books where id = ${id}`;
+      return {
+        error: book
+          ? "This book is on loan, so it can't be deleted. Record its return first."
+          : BOOK_GONE,
+      };
+    }
+  } catch (error) {
+    console.error(error);
+    return { error: TRY_AGAIN };
+  }
+
+  revalidatePath("/");
+  return {};
 }
 
 export async function addBook(

@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { connection } from "next/server";
 import { getBooks, type Book } from "@/db/books";
-import { AddBookForm } from "./book-forms";
+import { AddBookForm, BookActions } from "./book-forms";
 
 function formatDate(isoDate: string) {
   return new Date(`${isoDate}T00:00:00Z`).toLocaleDateString("en-GB", {
@@ -27,6 +27,7 @@ function BookCard({ book }: { book: Book }) {
       ) : (
         <p className="mt-2 text-sm font-medium text-emerald-700">Available</p>
       )}
+      <BookActions book={book} />
     </li>
   );
 }
