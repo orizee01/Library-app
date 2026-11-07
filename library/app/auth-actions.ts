@@ -1,47 +1,55 @@
 "use server";
 
+import { createHash, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { sql } from "@/db";
 import { endSession, hashPassword, startSession, verifyPassword } from "@/lib/auth";
+import {
+  readLogin,
+  readSignup,
+  validateLogin,
+  validateSignup,
+  type FieldErrors,
+} from "@/lib/auth-validation";
 import { JUST_LOGGED_IN_COOKIE } from "@/lib/session-cookie";
 
-export type AuthFormState = { error?: string; values?: { name?: string; email: string } };
+export type AuthFormState = {
+  error?: string; // about the whole form
+  fieldErrors?: FieldErrors; // about one field, keyed by its input name
+  values?: { name?: string; email: string; inviteCode?: string };
+};
 
 const TRY_AGAIN = "Something went wrong. Please try again.";
 const WRONG_LOGIN = "That email or password is incorrect.";
+const MAX_PASSWORD_LENGTH = 200;
 
 // Checked against when the email is unknown, so a wrong email takes as long as
 // a wrong password and doesn't reveal who has an account.
 const NO_SUCH_USER = `${"0".repeat(32)}$${"0".repeat(128)}`;
 
-function field(formData: FormData, name: string) {
-  const value = formData.get(name);
-  return typeof value === "string" ? value : "";
-}
-
-function readEmail(formData: FormData) {
-  return field(formData, "email").trim().toLowerCase();
+// Compares hashes, so the time taken doesn't reveal how close a guess was.
+function sameText(a: string, b: string) {
+  const hash = (text: string) => createHash("sha256").update(text).digest();
+  return timingSafeEqual(hash(a), hash(b));
 }
 
 export async function signUp(
   _previous: AuthFormState,
   formData: FormData,
 ): Promise<AuthFormState> {
-  const name = field(formData, "name").trim().replace(/\s+/g, " ");
-  const email = readEmail(formData);
-  const password = field(formData, "password");
-  const values = { name, email }; // the password is never sent back
+  const { name, email, password, inviteCode } = readSignup(formData);
+  const values = { name, email, inviteCode }; // the password is never sent back
 
-  if (!name) return { error: "Please enter your name.", values };
-  if (name.length > 200) return { error: "That name is too long (200 characters at most).", values };
-  if (email.length > 200 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    return { error: "Please enter a real email address.", values };
+  // No code set on the server means sign-up stays closed, not open to everyone.
+  const expectedCode = process.env.SIGNUP_INVITE_CODE?.trim();
+  if (!expectedCode) return { error: "Sign-up isn't open yet.", values };
+
+  const fieldErrors = validateSignup(formData);
+  if (inviteCode && !sameText(inviteCode, expectedCode)) {
+    fieldErrors.invite_code = "That invite code isn't right. Please ask the librarian for it.";
   }
-  if (password.length < 8) return { error: "Your password needs at least 8 characters.", values };
-  if (password.length > 200) {
-    return { error: "That password is too long (200 characters at most).", values };
-  }
+  if (Object.keys(fieldErrors).length > 0) return { fieldErrors, values };
 
   try {
     const [user] = await sql<{ id: number }[]>`
@@ -51,27 +59,29 @@ export async function signUp(
       returning id
     `;
     if (!user) {
-      return { error: "That email already has an account. Please log in instead.", values };
+      return {
+        fieldErrors: { email: "That email already has an account. Please log in instead." },
+        values,
+      };
     }
-    await startSession(user.id);
   } catch (error) {
     console.error(error);
     return { error: TRY_AGAIN, values };
   }
 
-  redirect("/");
+  redirect("/login?created=1");
 }
 
 export async function logIn(
   _previous: AuthFormState,
   formData: FormData,
 ): Promise<AuthFormState> {
-  const email = readEmail(formData);
-  const password = field(formData, "password");
+  const { email, password } = readLogin(formData);
   const values = { email };
 
-  if (!email || !password) return { error: "Please enter your email and password.", values };
-  if (password.length > 200) return { error: WRONG_LOGIN, values };
+  const fieldErrors = validateLogin(formData);
+  if (Object.keys(fieldErrors).length > 0) return { fieldErrors, values };
+  if (password.length > MAX_PASSWORD_LENGTH) return { error: WRONG_LOGIN, values };
 
   try {
     const [user] = await sql<{ id: number; password_hash: string }[]>`

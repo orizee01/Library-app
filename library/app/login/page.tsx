@@ -3,12 +3,27 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { LoginForm } from "../auth-forms";
 
-async function LoginContent() {
+type SearchParams = Promise<{ created?: string }>;
+
+async function LoginContent({ searchParams }: { searchParams: SearchParams }) {
   if (await getCurrentUser()) redirect("/");
-  return <LoginForm />;
+  const { created } = await searchParams;
+  return (
+    <>
+      {created === "1" && (
+        <p
+          role="status"
+          className="mb-4 rounded-sm border border-moss/30 border-l-4 border-l-moss bg-vellum px-3 py-2 text-center text-sm font-semibold text-moss-deep"
+        >
+          Your account has been created. Please log in.
+        </p>
+      )}
+      <LoginForm />
+    </>
+  );
 }
 
-export default function LoginPage() {
+export default function LoginPage({ searchParams }: { searchParams: SearchParams }) {
   return (
     <div className="mx-auto max-w-sm pt-2 sm:pt-6">
       <p className="eyebrow text-center">The Front Desk</p>
@@ -17,7 +32,7 @@ export default function LoginPage() {
       </h2>
       <p className="mt-2 mb-6 text-center text-muted italic">Log in to manage the library.</p>
       <Suspense fallback={<div className="card h-72 animate-pulse bg-vellum/60" />}>
-        <LoginContent />
+        <LoginContent searchParams={searchParams} />
       </Suspense>
     </div>
   );
