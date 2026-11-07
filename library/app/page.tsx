@@ -1,7 +1,7 @@
 import { Suspense } from "react";
-import { connection } from "next/server";
 import { getBooks } from "@/db/books";
 import { getMembers } from "@/db/members";
+import { requireUser } from "@/lib/auth";
 import { AddBookForm } from "./book-forms";
 import { BookList } from "./book-list";
 
@@ -15,8 +15,9 @@ function LoadingBooks() {
   );
 }
 
+// Everything on this page needs a login, including the form.
 async function BooksContent() {
-  await connection(); // read the database on each request, not at build time
+  await requireUser();
   const books = await getBooks();
   const members = await getMembers();
   const authors = [...new Set(books.map((book) => book.author))].sort();

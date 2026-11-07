@@ -1,6 +1,6 @@
 import { Suspense } from "react";
-import { connection } from "next/server";
 import { getMembersWithLoans } from "@/db/members";
+import { requireUser } from "@/lib/auth";
 import { AddMemberForm } from "./member-form";
 import { MemberList } from "./member-list";
 
@@ -14,8 +14,9 @@ function LoadingMembers() {
   );
 }
 
+// Everything on this page needs a login, including the form.
 async function MembersContent() {
-  await connection(); // read the database on each request, not at build time
+  await requireUser();
   const members = await getMembersWithLoans();
   return (
     <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-8">

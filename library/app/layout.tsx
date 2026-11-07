@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { Courier_Prime, Libre_Caslon_Text, Source_Serif_4 } from "next/font/google";
+import { Suspense } from "react";
 import { Shelf } from "./shelf";
-import { Nav } from "./nav";
+import { SiteFooter } from "./site-footer";
+import { UserMenu } from "./user-menu";
 import "./globals.css";
 
 const sourceSerif = Source_Serif_4({
@@ -43,20 +45,16 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
                 Church Lending Library
               </p>
             </div>
-            <Nav />
+            <Suspense fallback={null}>
+              <UserMenu />
+            </Suspense>
           </div>
           <Shelf />
         </header>
         <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12">{children}</main>
-        <footer className="mx-auto max-w-6xl px-4 pb-8 sm:px-6">
-          <div className="double-rule" />
-          <p className="mt-3 text-sm text-muted">
-            Books as data, for the WhatsApp bot:{" "}
-            <a href="/api/books" className="font-semibold text-moss underline underline-offset-2">
-              /api/books
-            </a>
-          </p>
-        </footer>
+        <Suspense fallback={null}>
+          <SiteFooter />
+        </Suspense>
       </body>
     </html>
   );

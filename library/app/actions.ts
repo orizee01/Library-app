@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { sql } from "@/db";
+import { requireUser } from "@/lib/auth";
 
 export type BookValues = { title: string; author: string; year: string };
 export type BookFormState = { error?: string; values?: BookValues };
@@ -62,6 +63,9 @@ function memberProblem({ name, phone }: { name: string; phone: string }) {
   return null;
 }
 
+// Anyone can send a request straight to a server action, so every action below
+// calls requireUser() first, even though the pages check too.
+
 // Finds the author, or adds them if they're new. The conflict rule uses the
 // unique index on lower(name), so "chinua achebe" finds "Chinua Achebe".
 async function authorId(name: string) {
@@ -86,6 +90,7 @@ export async function updateBook(
   _previous: BookFormState,
   formData: FormData,
 ): Promise<BookFormState> {
+  await requireUser();
   const values = readBook(formData);
   const problem = bookProblem(values);
   if (problem) return { error: problem, values };
@@ -114,6 +119,7 @@ export async function updateBook(
 }
 
 export async function deleteBook(formData: FormData): Promise<{ error?: string }> {
+  await requireUser();
   const id = readId(formData, "id");
   if (!id) return { error: BOOK_GONE };
 
@@ -146,6 +152,7 @@ export async function deleteBook(formData: FormData): Promise<{ error?: string }
 }
 
 export async function lendBook(formData: FormData): Promise<{ error?: string }> {
+  await requireUser();
   const bookId = readId(formData, "id");
   const memberId = readId(formData, "member_id");
   if (!bookId) return { error: BOOK_GONE };
@@ -178,6 +185,7 @@ export async function lendBook(formData: FormData): Promise<{ error?: string }> 
 }
 
 export async function returnBook(formData: FormData): Promise<{ error?: string }> {
+  await requireUser();
   const id = readId(formData, "id");
   if (!id) return { error: BOOK_GONE };
 
@@ -202,6 +210,7 @@ export async function addMember(
   _previous: MemberFormState,
   formData: FormData,
 ): Promise<MemberFormState> {
+  await requireUser();
   const values = readMember(formData);
   const problem = memberProblem(values);
   if (problem) return { error: problem, values };
@@ -224,6 +233,7 @@ export async function updateMember(
   _previous: MemberFormState,
   formData: FormData,
 ): Promise<MemberFormState> {
+  await requireUser();
   const values = readMember(formData);
   const problem = memberProblem(values);
   if (problem) return { error: problem, values };
@@ -252,6 +262,7 @@ export async function addBook(
   _previous: BookFormState,
   formData: FormData,
 ): Promise<BookFormState> {
+  await requireUser();
   const values = readBook(formData);
   const problem = bookProblem(values);
   if (problem) return { error: problem, values };
