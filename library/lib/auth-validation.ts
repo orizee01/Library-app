@@ -25,7 +25,6 @@ export function readSignup(formData: FormData) {
     name: text(formData, "name").trim().replace(/\s+/g, " "),
     email: readEmail(formData),
     password: text(formData, "password"),
-    inviteCode: text(formData, "invite_code").trim(),
   };
 }
 
@@ -60,14 +59,12 @@ function onlyProblems(problems: Record<string, string | undefined>) {
   return errors;
 }
 
-// Whether an invite code is correct can only be checked on the server.
 export function validateSignup(formData: FormData) {
-  const { name, email, password, inviteCode } = readSignup(formData);
+  const { name, email, password } = readSignup(formData);
   return onlyProblems({
     name: nameProblem(name),
     email: emailProblem(email),
     password: newPasswordProblem(password),
-    invite_code: inviteCode ? undefined : "Please enter the invite code.",
   });
 }
 

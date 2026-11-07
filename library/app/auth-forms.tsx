@@ -237,13 +237,6 @@ export function SignupForm() {
           hint="At least 8 characters, with a letter and a number."
           error={errors.password}
         />
-        <TextField
-          label="Invite code"
-          name="invite_code"
-          autoComplete="off"
-          defaultValue={state.values?.inviteCode}
-          error={errors.invite_code}
-        />
       </div>
       <Alert text={blocked ? undefined : state.error} />
       <button type="submit" disabled={pending} className="btn-primary mt-4 w-full">

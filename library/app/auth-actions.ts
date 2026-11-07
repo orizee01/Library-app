@@ -1,6 +1,5 @@
 "use server";
 
-import { createHash, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { sql } from "@/db";
@@ -17,7 +16,7 @@ import { JUST_LOGGED_IN_COOKIE } from "@/lib/session-cookie";
 export type AuthFormState = {
   error?: string; // about the whole form
   fieldErrors?: FieldErrors; // about one field, keyed by its input name
-  values?: { name?: string; email: string; inviteCode?: string };
+  values?: { name?: string; email: string };
 };
 
 const TRY_AGAIN = "Something went wrong. Please try again.";
@@ -28,27 +27,14 @@ const MAX_PASSWORD_LENGTH = 200;
 // a wrong password and doesn't reveal who has an account.
 const NO_SUCH_USER = `${"0".repeat(32)}$${"0".repeat(128)}`;
 
-// Compares hashes, so the time taken doesn't reveal how close a guess was.
-function sameText(a: string, b: string) {
-  const hash = (text: string) => createHash("sha256").update(text).digest();
-  return timingSafeEqual(hash(a), hash(b));
-}
-
 export async function signUp(
   _previous: AuthFormState,
   formData: FormData,
 ): Promise<AuthFormState> {
-  const { name, email, password, inviteCode } = readSignup(formData);
-  const values = { name, email, inviteCode }; // the password is never sent back
-
-  // No code set on the server means sign-up stays closed, not open to everyone.
-  const expectedCode = process.env.SIGNUP_INVITE_CODE?.trim();
-  if (!expectedCode) return { error: "Sign-up isn't open yet.", values };
+  const { name, email, password } = readSignup(formData);
+  const values = { name, email }; // the password is never sent back
 
   const fieldErrors = validateSignup(formData);
-  if (inviteCode && !sameText(inviteCode, expectedCode)) {
-    fieldErrors.invite_code = "That invite code isn't right. Please ask the librarian for it.";
-  }
   if (Object.keys(fieldErrors).length > 0) return { fieldErrors, values };
 
   try {
