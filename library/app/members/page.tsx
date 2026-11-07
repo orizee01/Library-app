@@ -1,39 +1,44 @@
 import { Suspense } from "react";
 import { connection } from "next/server";
-import { getMembers } from "@/db/members";
+import { getMembersWithLoans } from "@/db/members";
 import { AddMemberForm } from "./member-form";
+import { MemberList } from "./member-list";
 
-async function MemberList() {
-  await connection(); // read the database on each request, not at build time
-  const members = await getMembers();
-
-  if (members.length === 0) {
-    return <p className="text-stone-600">No members yet.</p>;
-  }
+function LoadingMembers() {
   return (
-    <ul className="grid gap-3">
-      {members.map((member) => (
-        <li
-          key={member.id}
-          className="rounded-lg border border-stone-200 bg-white p-4 shadow-sm"
-        >
-          <h3 className="font-semibold text-stone-900">{member.name}</h3>
-          <p className="text-sm text-stone-600">{member.phone ?? "No phone number"}</p>
-        </li>
+    <div role="status" aria-label="Loading members" className="grid gap-4 pt-10 sm:grid-cols-2">
+      {[1, 2, 3, 4].map((n) => (
+        <div key={n} className="card h-40 animate-pulse bg-vellum/60" />
       ))}
-    </ul>
+    </div>
+  );
+}
+
+async function MembersContent() {
+  await connection(); // read the database on each request, not at build time
+  const members = await getMembersWithLoans();
+  return (
+    <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-8">
+      <aside className="lg:sticky lg:top-6 lg:order-last">
+        <AddMemberForm />
+      </aside>
+      <section aria-label="All members" className="min-w-0">
+        <MemberList members={members} />
+      </section>
+    </div>
   );
 }
 
 export default function MembersPage() {
   return (
     <>
-      <h2 className="mb-4 text-xl font-semibold text-stone-900">Members</h2>
-      <div className="mb-6">
-        <AddMemberForm />
+      <div className="mb-8">
+        <p className="eyebrow">The Register</p>
+        <h2 className="page-title">Members</h2>
+        <div className="double-rule mt-4" />
       </div>
-      <Suspense fallback={<p className="text-stone-600">Loading members…</p>}>
-        <MemberList />
+      <Suspense fallback={<LoadingMembers />}>
+        <MembersContent />
       </Suspense>
     </>
   );

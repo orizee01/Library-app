@@ -9,6 +9,13 @@ export type MemberFormState = { error?: string; values?: { name: string; phone: 
 
 const TRY_AGAIN = "Something went wrong. Please try again.";
 const BOOK_GONE = "That book no longer exists. Please refresh the page.";
+const MEMBER_GONE = "That member no longer exists. Please refresh the page.";
+
+// Both pages show books, members and loans, so a change to one refreshes both.
+function refreshPages() {
+  revalidatePath("/");
+  revalidatePath("/members");
+}
 
 // Form values come from the browser, so they can't be trusted. This returns
 // trimmed text with repeated spaces collapsed, and "" for anything else.
@@ -37,6 +44,20 @@ function bookProblem({ title, author, year }: BookValues) {
     if (!/^\d{4}$/.test(year) || number < 1000 || number > thisYear) {
       return `Please enter a real year, from 1000 to ${thisYear}, like 1987.`;
     }
+  }
+  return null;
+}
+
+function readMember(formData: FormData) {
+  return { name: text(formData, "name"), phone: text(formData, "phone") };
+}
+
+// Returns the reason a member can't be saved, or null if it's fine.
+function memberProblem({ name, phone }: { name: string; phone: string }) {
+  if (!name) return "Please enter the member's name.";
+  if (name.length > 200) return "That name is too long (200 characters at most).";
+  if (phone && !/^\+?[\d\s()-]{5,20}$/.test(phone)) {
+    return "Please enter a real phone number, or leave it empty.";
   }
   return null;
 }
@@ -88,7 +109,7 @@ export async function updateBook(
     return { error: TRY_AGAIN, values };
   }
 
-  revalidatePath("/");
+  refreshPages();
   return {};
 }
 
@@ -120,7 +141,7 @@ export async function deleteBook(formData: FormData): Promise<{ error?: string }
     return { error: TRY_AGAIN };
   }
 
-  revalidatePath("/");
+  refreshPages();
   return {};
 }
 
@@ -152,7 +173,7 @@ export async function lendBook(formData: FormData): Promise<{ error?: string }> 
     return { error: TRY_AGAIN };
   }
 
-  revalidatePath("/");
+  refreshPages();
   return {};
 }
 
@@ -173,7 +194,7 @@ export async function returnBook(formData: FormData): Promise<{ error?: string }
     return { error: TRY_AGAIN };
   }
 
-  revalidatePath("/");
+  refreshPages();
   return {};
 }
 
@@ -181,15 +202,9 @@ export async function addMember(
   _previous: MemberFormState,
   formData: FormData,
 ): Promise<MemberFormState> {
-  const values = { name: text(formData, "name"), phone: text(formData, "phone") };
-
-  if (!values.name) return { error: "Please enter the member's name.", values };
-  if (values.name.length > 200) {
-    return { error: "That name is too long (200 characters at most).", values };
-  }
-  if (values.phone && !/^\+?[\d\s()-]{5,20}$/.test(values.phone)) {
-    return { error: "Please enter a real phone number, or leave it empty.", values };
-  }
+  const values = readMember(formData);
+  const problem = memberProblem(values);
+  if (problem) return { error: problem, values };
 
   try {
     await sql`
@@ -201,8 +216,35 @@ export async function addMember(
     return { error: TRY_AGAIN, values };
   }
 
-  revalidatePath("/members");
-  revalidatePath("/"); // the lend list on the Books page shows members too
+  refreshPages();
+  return {};
+}
+
+export async function updateMember(
+  _previous: MemberFormState,
+  formData: FormData,
+): Promise<MemberFormState> {
+  const values = readMember(formData);
+  const problem = memberProblem(values);
+  if (problem) return { error: problem, values };
+
+  const id = readId(formData, "id");
+  if (!id) return { error: MEMBER_GONE, values };
+
+  try {
+    const updated = await sql`
+      update members
+      set name = ${values.name}, phone = ${values.phone || null}
+      where id = ${id}
+      returning id
+    `;
+    if (updated.length === 0) return { error: MEMBER_GONE, values };
+  } catch (error) {
+    console.error(error);
+    return { error: TRY_AGAIN, values };
+  }
+
+  refreshPages();
   return {};
 }
 
@@ -225,6 +267,6 @@ export async function addBook(
     return { error: TRY_AGAIN, values };
   }
 
-  revalidatePath("/");
+  refreshPages();
   return {};
 }

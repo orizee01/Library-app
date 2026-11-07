@@ -1,5 +1,124 @@
 @import "tailwindcss";
 
 @theme inline {
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-source-serif);
+  --font-display: var(--font-libre-caslon);
+  --font-stamp: var(--font-courier-prime);
+
+  --color-paper: #efe6d2;
+  --color-vellum: #fbf6ea;
+  --color-ink: #2a2118;
+  --color-muted: #65594a;
+  --color-line: #d9cbb0;
+  --color-moss: #1f3d31;
+  --color-moss-deep: #142a22;
+  --color-cream: #f6efdd;
+  --color-brass: #c8a45a;
+  --color-brass-deep: #7d5f22;
+  --color-oxblood: #7c2a23;
+  --color-oxblood-deep: #5f1e19;
+  --color-rule: #b9493c;
+}
+
+:root {
+  color-scheme: light;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .toast {
+    animation: toast-in 200ms ease-out;
+  }
+}
+
+body {
+  background-color: var(--color-paper);
+  background-image: radial-gradient(ellipse 80% 420px at 50% 0, rgb(255 250 235 / 0.7), transparent);
+  background-repeat: no-repeat;
+}
+
+@layer components {
+  /* A catalogue card: warm stock, with the red rule printed across the top. */
+  .card {
+    @apply rounded-sm border border-line bg-vellum shadow-[0_1px_0_rgb(255_255_255/0.7)_inset,0_1px_2px_rgb(60_40_15/0.1),0_10px_22px_-16px_rgb(60_40_15/0.45)];
+  }
+
+  .card-ruled {
+    @apply border-t-2 border-t-rule;
+  }
+
+  .eyebrow {
+    @apply text-xs font-semibold tracking-[0.2em] text-brass-deep uppercase;
+  }
+
+  .page-title {
+    @apply mt-1 font-display text-4xl tracking-tight text-moss-deep sm:text-5xl;
+  }
+
+  /* Two thin brass lines, like the tooling on a leather binding. */
+  .double-rule {
+    @apply h-1 border-y border-brass-deep/60;
+  }
+
+  .field-label {
+    @apply block text-sm font-semibold text-ink;
+  }
+
+  /* 16px text stops phones zooming in when a field is tapped. */
+  .field {
+    @apply mt-1.5 min-h-11 w-full rounded-sm border border-line bg-white/70 px-3 py-2 text-base text-ink transition-colors hover:border-muted/60 focus:border-moss focus:bg-white focus:ring-2 focus:ring-moss/20 focus:outline-none;
+  }
+
+  .btn-primary,
+  .btn-quiet,
+  .btn-danger {
+    @apply inline-flex min-h-11 cursor-pointer items-center justify-center rounded-sm px-4 py-2 text-sm font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-moss focus-visible:ring-offset-2 focus-visible:ring-offset-vellum focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .btn-primary {
+    @apply bg-moss text-cream shadow-[inset_0_0_0_1px_rgb(200_164_90/0.45)] hover:bg-moss-deep;
+  }
+
+  .btn-quiet {
+    @apply border border-line bg-transparent text-ink hover:border-muted/60 hover:bg-paper/60;
+  }
+
+  .btn-danger {
+    @apply text-oxblood hover:bg-oxblood/10;
+  }
+
+  .alert {
+    @apply mt-3 rounded-sm border border-oxblood/30 border-l-4 border-l-oxblood bg-oxblood/5 px-3 py-2 text-sm font-semibold text-oxblood-deep;
+  }
+
+  /* The inked mark a librarian stamps on the date-due slip. */
+  .stamp {
+    @apply inline-block rounded-sm border-2 px-2.5 py-1 font-stamp text-sm leading-snug font-bold;
+  }
+
+  .stamp-out {
+    @apply border-oxblood/70 text-oxblood;
+  }
+
+  .stamp-in {
+    @apply border-moss/60 text-moss;
+  }
+
+  .stamp-overdue {
+    @apply border-oxblood bg-oxblood tracking-wider text-cream uppercase;
+  }
+
+  .chip {
+    @apply inline-flex min-h-11 cursor-pointer items-center rounded-sm border border-line bg-vellum px-3 py-2 text-sm font-semibold text-ink transition-colors hover:border-muted/60 focus-visible:ring-2 focus-visible:ring-moss focus-visible:ring-offset-2 focus-visible:ring-offset-paper focus-visible:outline-none aria-pressed:border-moss aria-pressed:bg-moss aria-pressed:text-cream;
+  }
+
+  .chip-alert {
+    @apply border-oxblood/50 text-oxblood aria-pressed:border-oxblood aria-pressed:bg-oxblood aria-pressed:text-cream;
+  }
 }

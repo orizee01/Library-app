@@ -1,11 +1,24 @@
 import type { Metadata } from "next";
-import { Geist } from "next/font/google";
-import Link from "next/link";
+import { Courier_Prime, Libre_Caslon_Text, Source_Serif_4 } from "next/font/google";
+import { Shelf } from "./shelf";
+import { Nav } from "./nav";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
+const sourceSerif = Source_Serif_4({
+  variable: "--font-source-serif",
+  subsets: ["latin", "latin-ext"],
+});
+
+const libreCaslon = Libre_Caslon_Text({
+  variable: "--font-libre-caslon",
+  weight: ["400", "700"],
+  subsets: ["latin", "latin-ext"],
+});
+
+const courierPrime = Courier_Prime({
+  variable: "--font-courier-prime",
+  weight: ["400", "700"],
+  subsets: ["latin", "latin-ext"],
 });
 
 export const metadata: Metadata = {
@@ -15,25 +28,35 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${geistSans.variable} h-full antialiased`}>
-      <body className="min-h-full bg-stone-100">
-        <header className="border-b border-stone-200 bg-white">
-          <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-x-6 gap-y-1 px-4 py-3">
-            <h1 className="text-lg font-bold text-stone-900">Library Manager</h1>
-            <nav className="flex gap-4 text-sm font-medium">
-              <Link href="/" className="py-1 text-stone-700 underline-offset-4 hover:underline">
-                Books
-              </Link>
-              <Link
-                href="/members"
-                className="py-1 text-stone-700 underline-offset-4 hover:underline"
-              >
-                Members
-              </Link>
-            </nav>
+    <html
+      lang="en"
+      className={`${sourceSerif.variable} ${libreCaslon.variable} ${courierPrime.variable} h-full antialiased`}
+    >
+      <body className="min-h-full font-sans text-ink">
+        <header className="bg-moss">
+          <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-6 gap-y-3 px-4 py-4 sm:px-6 sm:py-5">
+            <div>
+              <h1 className="font-display text-2xl tracking-tight text-cream sm:text-3xl">
+                Library Manager
+              </h1>
+              <p className="mt-0.5 text-[0.7rem] font-semibold tracking-[0.22em] text-brass uppercase">
+                Church Lending Library
+              </p>
+            </div>
+            <Nav />
           </div>
+          <Shelf />
         </header>
-        <main className="mx-auto max-w-3xl px-4 py-6">{children}</main>
+        <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12">{children}</main>
+        <footer className="mx-auto max-w-6xl px-4 pb-8 sm:px-6">
+          <div className="double-rule" />
+          <p className="mt-3 text-sm text-muted">
+            Books as data, for the WhatsApp bot:{" "}
+            <a href="/api/books" className="font-semibold text-moss underline underline-offset-2">
+              /api/books
+            </a>
+          </p>
+        </footer>
       </body>
     </html>
   );

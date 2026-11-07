@@ -1,64 +1,48 @@
 import { Suspense } from "react";
 import { connection } from "next/server";
-import { getBooks, type Book } from "@/db/books";
-import { getMembers, type Member } from "@/db/members";
-import { AddBookForm, BookActions } from "./book-forms";
+import { getBooks } from "@/db/books";
+import { getMembers } from "@/db/members";
+import { AddBookForm } from "./book-forms";
+import { BookList } from "./book-list";
 
-function formatDate(isoDate: string) {
-  return new Date(`${isoDate}T00:00:00Z`).toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-    timeZone: "UTC",
-  });
-}
-
-function BookCard({ book, members }: { book: Book; members: Member[] }) {
+function LoadingBooks() {
   return (
-    <li className="rounded-lg border border-stone-200 bg-white p-4 shadow-sm">
-      <h3 className="font-semibold text-stone-900">{book.title}</h3>
-      <p className="text-sm text-stone-600">
-        {book.author}
-        {book.year ? `, ${book.year}` : ""}
-      </p>
-      {book.due_on ? (
-        <p className="mt-2 text-sm font-medium text-amber-800">
-          On loan to {book.borrower}, due {formatDate(book.due_on)}
-        </p>
-      ) : (
-        <p className="mt-2 text-sm font-medium text-emerald-700">Available</p>
-      )}
-      <BookActions book={book} members={members} />
-    </li>
+    <div role="status" aria-label="Loading books" className="grid gap-4 pt-10">
+      {[1, 2, 3].map((n) => (
+        <div key={n} className="card h-52 animate-pulse bg-vellum/60" />
+      ))}
+    </div>
   );
 }
 
-async function BookList() {
+async function BooksContent() {
   await connection(); // read the database on each request, not at build time
   const books = await getBooks();
   const members = await getMembers();
+  const authors = [...new Set(books.map((book) => book.author))].sort();
 
-  if (books.length === 0) {
-    return <p className="text-stone-600">No books yet.</p>;
-  }
   return (
-    <ul className="grid gap-3">
-      {books.map((book) => (
-        <BookCard key={book.id} book={book} members={members} />
-      ))}
-    </ul>
+    <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-8">
+      <aside className="lg:sticky lg:top-6 lg:order-last">
+        <AddBookForm authors={authors} />
+      </aside>
+      <section aria-label="All books" className="min-w-0">
+        <BookList books={books} members={members} />
+      </section>
+    </div>
   );
 }
 
 export default function BooksPage() {
   return (
     <>
-      <h2 className="mb-4 text-xl font-semibold text-stone-900">Books</h2>
-      <div className="mb-6">
-        <AddBookForm />
+      <div className="mb-8">
+        <p className="eyebrow">The Catalogue</p>
+        <h2 className="page-title">Books</h2>
+        <div className="double-rule mt-4" />
       </div>
-      <Suspense fallback={<p className="text-stone-600">Loading books…</p>}>
-        <BookList />
+      <Suspense fallback={<LoadingBooks />}>
+        <BooksContent />
       </Suspense>
     </>
   );

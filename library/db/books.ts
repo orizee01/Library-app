@@ -7,6 +7,7 @@ export type Book = {
   author: string;
   borrower: string | null;
   due_on: string | null; // YYYY-MM-DD, or null when the book is available
+  overdue: boolean;
 };
 
 // Every book with its author, plus its open loan if it has one.
@@ -19,7 +20,8 @@ export function getBooks() {
       b.year,
       a.name as author,
       m.name as borrower,
-      l.due_on::text as due_on
+      l.due_on::text as due_on,
+      coalesce(l.due_on < current_date, false) as overdue
     from books b
     join authors a on a.id = b.author_id
     left join loans l on l.book_id = b.id and l.returned_on is null

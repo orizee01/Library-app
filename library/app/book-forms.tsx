@@ -11,44 +11,43 @@ import {
   updateBook,
   type BookValues,
 } from "./actions";
-
-const inputClass =
-  "w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-base text-stone-900";
-const primaryButton =
-  "rounded-md bg-stone-800 px-4 py-2 text-sm font-medium text-white hover:bg-stone-700 disabled:opacity-50";
-const plainButton =
-  "rounded-md border border-stone-300 bg-white px-3 py-2 text-sm font-medium text-stone-800 hover:bg-stone-50 disabled:opacity-50";
-const dangerButton =
-  "rounded-md border border-red-300 bg-white px-3 py-2 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-50";
+import { AddPanel } from "./add-panel";
 
 export function Message({ text }: { text?: string }) {
   if (!text) return null;
   return (
-    <p role="alert" className="mt-2 text-sm font-medium text-red-700">
+    <p role="alert" className="alert">
       {text}
     </p>
   );
 }
 
-function BookFields({ values }: { values?: Partial<BookValues> }) {
+function BookFields({
+  values,
+  layout,
+}: {
+  values?: Partial<BookValues>;
+  layout: string;
+}) {
   return (
-    <div className="grid gap-3 sm:grid-cols-[2fr_2fr_1fr]">
-      <label className="text-sm font-medium text-stone-700">
+    <div className={`grid gap-3 ${layout}`}>
+      <label className="field-label">
         Title
-        <input name="title" defaultValue={values?.title} className={`${inputClass} mt-1`} />
+        <input name="title" defaultValue={values?.title} className="field" />
       </label>
-      <label className="text-sm font-medium text-stone-700">
+      <label className="field-label">
         Author
-        <input name="author" defaultValue={values?.author} className={`${inputClass} mt-1`} />
-      </label>
-      <label className="text-sm font-medium text-stone-700">
-        Year
         <input
-          name="year"
-          inputMode="numeric"
-          defaultValue={values?.year}
-          className={`${inputClass} mt-1`}
+          name="author"
+          list="known-authors"
+          autoComplete="off"
+          defaultValue={values?.author}
+          className="field"
         />
+      </label>
+      <label className="field-label">
+        Year
+        <input name="year" inputMode="numeric" defaultValue={values?.year} className="field" />
       </label>
     </div>
   );
@@ -70,15 +69,15 @@ function EditBookForm({ book, onClose }: { book: Book; onClose: () => void }) {
   };
 
   return (
-    <form action={action} className="mt-3 border-t border-stone-200 pt-3">
+    <form action={action} className="mt-4 border-t border-dashed border-line pt-4">
       <input type="hidden" name="id" value={book.id} />
-      <BookFields values={values} />
+      <BookFields values={values} layout="sm:grid-cols-[2fr_2fr_1fr]" />
       <Message text={state.error} />
-      <div className="mt-3 flex gap-2">
-        <button type="submit" disabled={pending} className={primaryButton}>
+      <div className="mt-3 flex flex-wrap gap-2">
+        <button type="submit" disabled={pending} className="btn-primary">
           {pending ? "Saving…" : "Save changes"}
         </button>
-        <button type="button" onClick={onClose} className={plainButton}>
+        <button type="button" onClick={onClose} className="btn-quiet">
           Cancel
         </button>
       </div>
@@ -102,59 +101,64 @@ export function BookActions({ book, members }: { book: Book; members: Member[] }
   }
 
   return (
-    <div className="mt-3">
-      {book.due_on ? (
-        <form action={run(returnBook)} className="mb-2">
-          <input type="hidden" name="id" value={book.id} />
-          <button type="submit" disabled={pending} className={primaryButton}>
-            Record return
-          </button>
-        </form>
-      ) : (
-        <form action={run(lendBook)} className="mb-2 flex flex-wrap items-center gap-2">
-          <input type="hidden" name="id" value={book.id} />
-          <select
-            name="member_id"
-            aria-label={`Lend "${book.title}" to`}
-            defaultValue=""
-            className="min-w-0 flex-1 rounded-md border border-stone-300 bg-white px-3 py-2 text-base text-stone-900 sm:max-w-xs"
+    <div className="mt-4 border-t border-dashed border-line pt-4">
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
+        {book.due_on ? (
+          <form action={run(returnBook)}>
+            <input type="hidden" name="id" value={book.id} />
+            <button type="submit" disabled={pending} className="btn-primary">
+              Record return
+            </button>
+          </form>
+        ) : (
+          <form
+            action={run(lendBook)}
+            className="flex w-full min-w-0 flex-wrap items-center gap-2 sm:w-auto sm:flex-1"
           >
-            <option value="" disabled>
-              Choose a member…
-            </option>
-            {members.map((member) => (
-              <option key={member.id} value={member.id}>
-                {member.name}
+            <input type="hidden" name="id" value={book.id} />
+            <select
+              name="member_id"
+              aria-label={`Lend "${book.title}" to`}
+              defaultValue=""
+              className="field mt-0 basis-full sm:max-w-56 sm:flex-1 sm:basis-auto"
+            >
+              <option value="" disabled>
+                Choose a member…
               </option>
-            ))}
-          </select>
-          <button type="submit" disabled={pending} className={primaryButton}>
-            Lend for 14 days
+              {members.map((member) => (
+                <option key={member.id} value={member.id}>
+                  {member.name}
+                </option>
+              ))}
+            </select>
+            <button type="submit" disabled={pending} className="btn-primary w-full sm:w-auto">
+              Lend for 14 days
+            </button>
+          </form>
+        )}
+        <div className="flex gap-1">
+          <button
+            type="button"
+            onClick={() => {
+              setEditing(!editing);
+              setMessage(undefined);
+            }}
+            className="btn-quiet"
+          >
+            Edit
           </button>
-        </form>
-      )}
-      <div className="flex flex-wrap gap-2">
-        <button
-          type="button"
-          onClick={() => {
-            setEditing(!editing);
-            setMessage(undefined);
-          }}
-          className={plainButton}
-        >
-          Edit
-        </button>
-        <form
-          action={run(deleteBook)}
-          onSubmit={(event) => {
-            if (!window.confirm(`Delete "${book.title}"?`)) event.preventDefault();
-          }}
-        >
-          <input type="hidden" name="id" value={book.id} />
-          <button type="submit" disabled={pending} className={dangerButton}>
-            Delete
-          </button>
-        </form>
+          <form
+            action={run(deleteBook)}
+            onSubmit={(event) => {
+              if (!window.confirm(`Delete "${book.title}"?`)) event.preventDefault();
+            }}
+          >
+            <input type="hidden" name="id" value={book.id} />
+            <button type="submit" disabled={pending} className="btn-danger">
+              Delete
+            </button>
+          </form>
+        </div>
       </div>
       <Message text={message} />
       {editing && <EditBookForm book={book} onClose={() => setEditing(false)} />}
@@ -162,16 +166,29 @@ export function BookActions({ book, members }: { book: Book; members: Member[] }
   );
 }
 
-export function AddBookForm() {
+export function AddBookForm({ authors }: { authors: string[] }) {
   const [state, action, pending] = useActionState(addBook, {});
   return (
-    <form action={action} className="rounded-lg border border-stone-200 bg-white p-4 shadow-sm">
-      <h3 className="mb-3 font-semibold text-stone-900">Add a book</h3>
-      <BookFields values={state.values} />
-      <Message text={state.error} />
-      <button type="submit" disabled={pending} className={`${primaryButton} mt-3`}>
-        {pending ? "Adding…" : "Add book"}
-      </button>
-    </form>
+    <AddPanel label="Add a book">
+      {/* Suggests authors we already have, in this form and every edit form,
+          so a typing slip doesn't create a second copy of an author. */}
+      <datalist id="known-authors">
+        {authors.map((author) => (
+          <option key={author} value={author} />
+        ))}
+      </datalist>
+      <form action={action} className="card card-ruled p-5">
+        <h3 className="mb-4 hidden font-display text-xl text-moss-deep lg:block">Add a book</h3>
+        <BookFields values={state.values} layout="sm:grid-cols-[2fr_2fr_1fr] lg:grid-cols-1" />
+        <Message text={state.error} />
+        <button
+          type="submit"
+          disabled={pending}
+          className="btn-primary mt-4 w-full sm:w-auto lg:w-full"
+        >
+          {pending ? "Adding…" : "Add book"}
+        </button>
+      </form>
+    </AddPanel>
   );
 }
