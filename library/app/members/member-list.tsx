@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import type { MemberWithLoans } from "@/db/members";
 import { formatDate, matchesSearch } from "@/lib/format";
@@ -89,6 +90,13 @@ export function MemberList({ members }: { members: MemberWithLoans[] }) {
       {shown.length === 0 ? (
         <div className="card card-ruled p-10 text-center">
           <p className="font-display text-xl text-moss-deep">No members match</p>
+          <p className="mt-2 text-muted">
+            This search only finds members, and books they have out. To find any other book, go to{" "}
+            <Link href="/" className="font-semibold text-moss underline underline-offset-2">
+              Books
+            </Link>
+            .
+          </p>
           <button type="button" onClick={() => setSearch("")} className="btn-quiet mt-3">
             Show all members
           </button>

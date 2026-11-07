@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import type { Book } from "@/db/books";
 import type { Member } from "@/db/members";
@@ -128,9 +129,17 @@ export function BookList({ books, members }: { books: Book[]; members: Member[] 
           </button>
         ))}
       </div>
+      <p className="mb-4 text-sm text-muted italic">
+        Lending to someone new? Add them on the{" "}
+        <Link href="/members" className="font-semibold text-moss underline underline-offset-2">
+          Members
+        </Link>{" "}
+        page first.
+      </p>
       {shown.length === 0 ? (
         <div className="card card-ruled p-10 text-center">
           <p className="font-display text-xl text-moss-deep">No books match</p>
+          <p className="mt-2 text-muted">If it&apos;s a new book, add it with Add a book.</p>
           <button
             type="button"
             onClick={() => {

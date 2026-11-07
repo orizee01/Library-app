@@ -1,13 +1,15 @@
 -- Starter data. Run once in the Supabase SQL Editor, after schema.sql.
 -- Nobody runs this a second time: it would add every book and member again.
 
--- 5 authors.
+-- 6 authors. Kenneth Hagin has no books yet.
 insert into authors (name) values
   ('Chinua Achebe'),
   ('Wole Soyinka'),
   ('Chimamanda Ngozi Adichie'),
   ('Ngũgĩ wa Thiong''o'),
-  ('Buchi Emecheta');
+  ('Buchi Emecheta'),
+  ('Kenneth Hagin');
+
 
 -- 10 books. Each one looks up its author's id by name.
 insert into books (title, year, author_id)

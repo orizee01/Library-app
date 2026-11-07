@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { getAuthorNames } from "@/db/authors";
 import { getBooks } from "@/db/books";
 import { getMembers } from "@/db/members";
 import { requireUser } from "@/lib/auth";
@@ -20,7 +21,7 @@ async function BooksContent() {
   await requireUser();
   const books = await getBooks();
   const members = await getMembers();
-  const authors = [...new Set(books.map((book) => book.author))].sort();
+  const authors = await getAuthorNames();
 
   return (
     <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-8">

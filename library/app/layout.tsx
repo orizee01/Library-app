@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Courier_Prime, Libre_Caslon_Text, Source_Serif_4 } from "next/font/google";
 import { Suspense } from "react";
 import { Shelf } from "./shelf";
-import { SiteFooter } from "./site-footer";
 import { UserMenu } from "./user-menu";
 import "./globals.css";
 
@@ -52,9 +51,6 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <Shelf />
         </header>
         <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12">{children}</main>
-        <Suspense fallback={null}>
-          <SiteFooter />
-        </Suspense>
       </body>
     </html>
   );
